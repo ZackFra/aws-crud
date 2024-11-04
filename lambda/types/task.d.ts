@@ -3,5 +3,5 @@ interface Task {
     title: string;
     description: string;
     complete: boolean;
-    attachmentIds?: string[];
+    attachmentIds: string[];
 }
