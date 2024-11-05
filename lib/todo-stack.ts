@@ -10,6 +10,8 @@ export class TodoStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+
+    /** dynamo, S3 */
     const attachmentsBucket = new s3.Bucket(this, 'attachments')
 
     const taskTable = new dynamodb.TableV2(this, 'tasks', {
@@ -17,6 +19,7 @@ export class TodoStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     })
 
+    /** lambdas */
     const createTaskFn = new lambda.Function(this, 'create-task', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
