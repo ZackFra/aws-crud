@@ -47,7 +47,9 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
     if (task.attachmentIds) {
         attachmentIds = [...task.attachmentIds]
     }
-    attachmentIds.push(uploadAttachmentRequest.fileName)
+    if (!attachmentIds.includes(uploadAttachmentRequest.fileName)) {
+        attachmentIds.push(uploadAttachmentRequest.fileName)
+    }
     const updateCommand = new UpdateCommand({
         TableName: process.env.TABLE_NAME,
         Key: {

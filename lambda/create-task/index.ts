@@ -1,5 +1,5 @@
 import { Context, APIGatewayProxyResult, APIGatewayEvent } from 'aws-lambda';
-import { PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, DynamoDBDocumentClient, PutCommandOutput } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 
 const client = new DynamoDBClient({
@@ -16,8 +16,9 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
     }
 
     const createTaskRequest = JSON.parse(event.body) as CreateTaskRequest
+    const taskId: string = Date.now().toLocaleString("en-US")
     const task: Task = {
-        id: Date.now().toLocaleString("en-US"),
+        id: taskId,
         title: createTaskRequest.title,
         description: createTaskRequest.description,
         attachmentIds: [],
@@ -28,10 +29,10 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
         Item: task
     })
     try {
-        await documentClient.send(command)
+        const response: PutCommandOutput = await documentClient.send(command)
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: "OK" })
+            body: JSON.stringify({ message: "OK", taskId })
         }
     } catch (e) {
         return {

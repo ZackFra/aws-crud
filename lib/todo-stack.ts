@@ -3,6 +3,7 @@ import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3'
+import * as apiGateway from 'aws-cdk-lib/aws-apigateway'
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class TodoStack extends cdk.Stack {
@@ -59,6 +60,18 @@ export class TodoStack extends cdk.Stack {
         BUCKET_NAME: attachmentsBucket.bucketName
       }
     })
+    const removeAttachmentFn = new lambda.Function(this, 'remove-attachment', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/remove-attachment'),
+      environment: {
+        TABLE_NAME: taskTable.tableName,
+      }
+    })
+
+    /** permissiones  */
+    taskTable.grantReadWriteData(removeAttachmentFn)
+
     attachmentsBucket.grantPut(uploadAttachmentFn)
     taskTable.grantReadWriteData(uploadAttachmentFn)
 
@@ -66,5 +79,33 @@ export class TodoStack extends cdk.Stack {
     taskTable.grantReadData(viewTasksFn)
     taskTable.grantWriteData(updateTaskFn)
     taskTable.grantWriteData(createTaskFn)
+
+    /** API Gateway */
+    const api = new apiGateway.RestApi(this, 'todo-api', {
+      restApiName: 'Todo Service',
+      description: 'This service serves todos.'
+    });
+
+    const tasks = api.root.addResource('tasks')
+    const attachments = api.root.addResource('attachments')
+
+    const createTaskIntegration = new apiGateway.LambdaIntegration(createTaskFn)
+    tasks.addMethod('POST', createTaskIntegration)
+
+    const viewTasksIntegration = new apiGateway.LambdaIntegration(viewTasksFn)
+    tasks.addMethod('GET', viewTasksIntegration)
+
+    const updateTaskIntegration = new apiGateway.LambdaIntegration(updateTaskFn)
+    tasks.addMethod('PUT', updateTaskIntegration)
+
+    const deleteTaskIntegration = new apiGateway.LambdaIntegration(deleteTaskFn)
+    tasks.addMethod('DELETE', deleteTaskIntegration)
+
+    const uploadAttachmentIntegration = new apiGateway.LambdaIntegration(uploadAttachmentFn)
+    attachments.addMethod('POST', uploadAttachmentIntegration)
+
+    const removeAttachmentIntegration = new apiGateway.LambdaIntegration(removeAttachmentFn)
+    attachments.addMethod('DELETE', removeAttachmentIntegration)
+
   }
 }
