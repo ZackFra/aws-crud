@@ -72,7 +72,7 @@ export class TodoStack extends cdk.Stack {
       }
     })
 
-    /** permissiones  */
+    /** permissions  */
     taskTable.grantReadWriteData(removeAttachmentFn)
 
     attachmentsBucket.grantPut(uploadAttachmentFn)
